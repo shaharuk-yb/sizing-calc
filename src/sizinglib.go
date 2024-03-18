@@ -12,12 +12,31 @@ import (
 func Switching(targetYbVersion string) {
 	filePath := "resources/yb_" + strings.ReplaceAll(targetYbVersion, ".", "_") + ".txt"
 
-	remoteFileExists, contents := checkFileExistsOnRemoteRepo(filePath)
+	if checkInternetAccess() {
+		remoteFileExists, contents := checkFileExistsOnRemoteRepo(filePath)
 
-	if remoteFileExists {
-		// print the contents of the file
-		fmt.Println(contents)
+		if remoteFileExists {
+			// print the contents of the file
+			fmt.Println(contents)
+		} else {
+			//check if local file exists
+			isFileExist := checkLocalFileExists(filePath)
+
+			if isFileExist {
+				fmt.Println("file exist locally")
+				// read the file
+				cont, err := os.ReadFile(filePath)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Println(string(cont))
+			} else {
+				fmt.Println("file doesn't exist locally")
+			}
+		}
 	} else {
+		// no network access
+		fmt.Println("No network access. Checking file locally...")
 		//check if local file exists
 		isFileExist := checkLocalFileExists(filePath)
 
@@ -30,7 +49,6 @@ func Switching(targetYbVersion string) {
 			}
 			fmt.Println(string(cont))
 		} else {
-
 			fmt.Println("file doesn't exist locally")
 		}
 	}
@@ -41,6 +59,13 @@ func checkLocalFileExists(filePath string) bool {
 	return !errors.Is(err, os.ErrNotExist)
 }
 
+func checkInternetAccess() (ok bool) {
+	_, err := http.Get("http://clients3.google.com/generate_204")
+	if err != nil {
+		return false
+	}
+	return true
+}
 func checkFileExistsOnRemoteRepo(fileName string) (bool, string) {
 	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/init/" + fileName
 	resp, _ := http.Get(remotePath)
