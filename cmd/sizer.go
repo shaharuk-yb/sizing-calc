@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
+	"io"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -49,16 +51,17 @@ func init() {
 func switching(targetYbVersion string) {
 	filePath := "resources/yb_" + strings.ReplaceAll(targetYbVersion, ".", "_") + ".txt"
 
-	fmt.Println(filePath)
+	checkFileExistsOnRepo(filePath)
+	/*	fmt.Println(filePath)
 
-	isFileExist := checkLocalFileExists(filePath)
+		isFileExist := checkLocalFileExists(filePath)
 
-	if isFileExist {
-		fmt.Println("file exist")
-	} else {
+		if isFileExist {
+			fmt.Println("file exist")
+		} else {
 
-		fmt.Println("file doesn't exist")
-	}
+			fmt.Println("file doesn't exist")
+		}*/
 
 }
 
@@ -67,6 +70,20 @@ func checkLocalFileExists(filePath string) bool {
 	return !errors.Is(err, os.ErrNotExist)
 }
 
-/*func checkFileExistsOnRepo(fileName string) bool {
+func checkFileExistsOnRepo(fileName string) bool {
+	resp, err := http.Get("https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/init/" + fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
 
-}*/
+	if resp.StatusCode != 200 {
+		fmt.Println("file does not exist on remote location")
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(body))
+	return true
+}
