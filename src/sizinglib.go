@@ -10,18 +10,16 @@ import (
 )
 
 func Switching(targetYbVersion string) {
-	filePath := "resources/yb_" + strings.ReplaceAll(targetYbVersion, ".", "_") + ".txt"
+	filePath := "resources/yb_" + strings.ReplaceAll(targetYbVersion, ".", "_") + ".db"
 
 	if checkInternetAccess() {
 		remoteFileExists, contents := checkFileExistsOnRemoteRepo(filePath)
-
 		if remoteFileExists {
 			// print the contents of the file
 			fmt.Println(contents)
 		} else {
-			//check if local file exists
+			// check if local file exists
 			isFileExist := checkLocalFileExists(filePath)
-
 			if isFileExist {
 				fmt.Println("file exist locally")
 				// read the file
@@ -37,7 +35,7 @@ func Switching(targetYbVersion string) {
 	} else {
 		// no network access
 		fmt.Println("No network access. Checking file locally...")
-		//check if local file exists
+		// check if local file exists
 		isFileExist := checkLocalFileExists(filePath)
 
 		if isFileExist {
