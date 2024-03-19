@@ -2,11 +2,9 @@ package src
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -63,32 +61,20 @@ func Switching(targetYbVersion string) {
 }
 
 func printRows() {
-	rows, err := DB.Query("SELECT * from sizing limit 10")
+	rows, err := DB.Query("SELECT id, dimension from sizing limit 10")
 	if err != nil {
 		fmt.Println("no records found")
 	}
 	defer rows.Close()
-	fmt.Println(rows)
+	allMaps := convertToMap(rows)
+	printMap(allMaps)
 
 	err = rows.Err()
-
 	if err != nil {
 		fmt.Println("error occurred")
 	}
 }
 
-func checkLocalFileExists(filePath string) bool {
-	_, err := os.Stat(filePath)
-	return !errors.Is(err, os.ErrNotExist)
-}
-
-func checkInternetAccess() (ok bool) {
-	_, err := http.Get("http://clients3.google.com/generate_204")
-	if err != nil {
-		return false
-	}
-	return true
-}
 func checkFileExistsOnRemoteRepo(fileName string) bool {
 	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/init/" + fileName
 	resp, _ := http.Get(remotePath)
@@ -124,10 +110,4 @@ func ConnectDatabase(file string) error {
 	}
 	DB = db
 	return nil
-}
-
-func checkErr(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
 }
