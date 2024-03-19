@@ -17,13 +17,18 @@ var sizerCmd = &cobra.Command{
 based on inputs provided by the user.
 NOTE: the recommendations can change based on the target yugabytedb version`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("sizer called")
 		tables, _ := cmd.Flags().GetInt("tables")
 		selectThroughput, _ := cmd.Flags().GetInt("select-throughput")
 		insertThroughput, _ := cmd.Flags().GetInt("insert-throughput")
 		targetYbVersion, _ := cmd.Flags().GetString("target-yb-version")
 		fmt.Printf("user inputs:\n\ttables: %v\n\tselect_throughput: %v\n\tinsert_throughput: %v\n\ttarget yb version: %v\n", tables, selectThroughput, insertThroughput, targetYbVersion)
-		src.Switching(targetYbVersion)
+
+		var inputs = make(map[string]int)
+		inputs["tables"] = tables
+		inputs["selectThroughput"] = selectThroughput
+		inputs["insertThroughput"] = insertThroughput
+
+		src.Switching(targetYbVersion, inputs)
 	},
 }
 

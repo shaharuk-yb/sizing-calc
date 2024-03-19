@@ -13,7 +13,12 @@ import (
 var baseDownloadPath = "resources/remote/"
 var DB *sql.DB
 
-func Switching(targetYbVersion string) {
+func Switching(targetYbVersion string, inputs map[string]int) {
+	// read required inputs: may change from version to version
+	tables := inputs["tables"]
+	//requiredSelectThroughput := inputs["requiredSelectThroughput"]
+	//requiredInsertThroughput := inputs["requiredInsertThroughput"]
+
 	filePath := "resources/yb_" + strings.ReplaceAll(targetYbVersion, ".", "_") + ".db"
 	if checkInternetAccess() {
 		remoteFileExists := checkFileExistsOnRemoteRepo(filePath)
@@ -57,7 +62,9 @@ func Switching(targetYbVersion string) {
 	}
 	err := ConnectDatabase(filePath)
 	checkErr(err)
-	printRows()
+	//printRows()
+	checkTableLimits(tables)
+	//getThroughputData(2, requiredInsertThroughput, requiredSelectThroughput)
 }
 
 func printRows() {
@@ -110,4 +117,35 @@ func ConnectDatabase(file string) error {
 	}
 	DB = db
 	return nil
+}
+
+func checkTableLimits(req_tables int) {
+	rows, err := DB.Query("select num_cores from sizing where num_tables > ? and dimension like '%TableLimits-3nodeRF=3%' order by num_cores", req_tables)
+	if err != nil {
+		fmt.Println("no records found")
+	}
+	defer rows.Close()
+	allMaps := convertToMap(rows)
+	printMap(allMaps)
+
+	err = rows.Err()
+	if err != nil {
+		fmt.Println("error occurred")
+	}
+}
+
+func getThroughputData(minCoresReq int, requiredInsertThroughput int, requiredSelectThroughput int) {
+	//rows, err := DB.Query("select foo.* from (select id, (cast(?/inserts_per_core) as int + ((?/inserts_per_core) > cast(?/inserts_per_core) as int)) insert_total_cores, (cast(?/selects_per_core) as int + ((?/selects_per_core) > cast(?/selects_per_core) as int) select_total_cores, num_cores, num_nodes from sizing where dimension='MaxThroughput' and num_cores>=?) as foo order by select_total_cores + insert_total_cores, num_cores", requiredInsertThroughput, requiredInsertThroughput, requiredInsertThroughput, requiredSelectThroughput, requiredSelectThroughput, requiredSelectThroughput, minCoresReq)
+	rows, err := DB.Query("select foo.* from (select id, ? , ?, num_cores, num_nodes from sizing where dimension='MaxThroughput' and num_cores>=?) as foo order by select_total_cores, insert_total_cores, num_cores", requiredInsertThroughput, requiredSelectThroughput, minCoresReq)
+	if err != nil {
+		fmt.Println("no records found")
+	}
+	defer rows.Close()
+	err = rows.Err()
+
+	allMaps := convertToMap(rows)
+	printMap(allMaps)
+	if err != nil {
+		fmt.Println("error occurred")
+	}
 }
