@@ -83,7 +83,7 @@ func printRows() {
 }
 
 func checkFileExistsOnRemoteRepo(fileName string) bool {
-	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/maps/" + fileName
+	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/main/" + fileName
 	resp, _ := http.Get(remotePath)
 
 	defer func(Body io.ReadCloser) {
