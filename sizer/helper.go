@@ -1,4 +1,4 @@
-package src
+package sizer
 
 import (
 	"database/sql"

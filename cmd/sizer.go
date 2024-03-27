@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/shaharuk-yb/sizing-calc/src"
+	"github.com/shaharuk-yb/sizing-calc/sizer"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ NOTE: the recommendations can change based on the target yugabytedb version`,
 		inputs["selectThroughput"] = selectThroughput
 		inputs["insertThroughput"] = insertThroughput
 
-		src.Switching(targetYbVersion, inputs)
+		sizer.Run(targetYbVersion, inputs)
 	},
 }
 

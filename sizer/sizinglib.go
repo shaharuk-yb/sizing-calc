@@ -1,4 +1,4 @@
-package src
+package sizer
 
 import (
 	"database/sql"
@@ -13,7 +13,7 @@ import (
 var baseDownloadPath = "resources/remote/"
 var DB *sql.DB
 
-func Switching(targetYbVersion string, inputs map[string]int) {
+func Run(targetYbVersion string, inputs map[string]int) {
 	// read required inputs: may change from version to version
 	tables := inputs["tables"]
 	//requiredSelectThroughput := inputs["requiredSelectThroughput"]
@@ -68,7 +68,7 @@ func Switching(targetYbVersion string, inputs map[string]int) {
 }
 
 func printRows() {
-	rows, err := DB.Query("SELECT id, dimension from sizing limit 10")
+	rows, err := DB.Query("SELECT * from sizing limit 10")
 	if err != nil {
 		fmt.Println("no records found")
 	}
@@ -83,7 +83,7 @@ func printRows() {
 }
 
 func checkFileExistsOnRemoteRepo(fileName string) bool {
-	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/init/" + fileName
+	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/maps/" + fileName
 	resp, _ := http.Get(remotePath)
 
 	defer func(Body io.ReadCloser) {
