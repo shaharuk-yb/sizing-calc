@@ -1,12 +1,10 @@
-package src
+package sizer
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -15,7 +13,12 @@ import (
 var baseDownloadPath = "resources/remote/"
 var DB *sql.DB
 
-func Switching(targetYbVersion string) {
+func Run(targetYbVersion string, inputs map[string]int) {
+	// read required inputs: may change from version to version
+	tables := inputs["tables"]
+	//requiredSelectThroughput := inputs["requiredSelectThroughput"]
+	//requiredInsertThroughput := inputs["requiredInsertThroughput"]
+
 	filePath := "resources/yb_" + strings.ReplaceAll(targetYbVersion, ".", "_") + ".db"
 	if checkInternetAccess() {
 		remoteFileExists := checkFileExistsOnRemoteRepo(filePath)
@@ -59,7 +62,9 @@ func Switching(targetYbVersion string) {
 	}
 	err := ConnectDatabase(filePath)
 	checkErr(err)
-	printRows()
+	//printRows()
+	checkTableLimits(tables)
+	//getThroughputData(2, requiredInsertThroughput, requiredSelectThroughput)
 }
 
 func printRows() {
@@ -68,29 +73,17 @@ func printRows() {
 		fmt.Println("no records found")
 	}
 	defer rows.Close()
-	fmt.Println(rows)
+	allMaps := convertToMap(rows)
+	printMap(allMaps)
 
 	err = rows.Err()
-
 	if err != nil {
 		fmt.Println("error occurred")
 	}
 }
 
-func checkLocalFileExists(filePath string) bool {
-	_, err := os.Stat(filePath)
-	return !errors.Is(err, os.ErrNotExist)
-}
-
-func checkInternetAccess() (ok bool) {
-	_, err := http.Get("http://clients3.google.com/generate_204")
-	if err != nil {
-		return false
-	}
-	return true
-}
 func checkFileExistsOnRemoteRepo(fileName string) bool {
-	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/init/" + fileName
+	remotePath := "https://raw.githubusercontent.com/shaharuk-yb/sizing-calc/maps/" + fileName
 	resp, _ := http.Get(remotePath)
 
 	defer func(Body io.ReadCloser) {
@@ -126,8 +119,33 @@ func ConnectDatabase(file string) error {
 	return nil
 }
 
-func checkErr(err error) {
+func checkTableLimits(req_tables int) {
+	rows, err := DB.Query("select num_cores from sizing where num_tables > ? and dimension like '%TableLimits-3nodeRF=3%' order by num_cores", req_tables)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("no records found")
+	}
+	defer rows.Close()
+	allMaps := convertToMap(rows)
+	printMap(allMaps)
+
+	err = rows.Err()
+	if err != nil {
+		fmt.Println("error occurred")
+	}
+}
+
+func getThroughputData(minCoresReq int, requiredInsertThroughput int, requiredSelectThroughput int) {
+	//rows, err := DB.Query("select foo.* from (select id, (cast(?/inserts_per_core) as int + ((?/inserts_per_core) > cast(?/inserts_per_core) as int)) insert_total_cores, (cast(?/selects_per_core) as int + ((?/selects_per_core) > cast(?/selects_per_core) as int) select_total_cores, num_cores, num_nodes from sizing where dimension='MaxThroughput' and num_cores>=?) as foo order by select_total_cores + insert_total_cores, num_cores", requiredInsertThroughput, requiredInsertThroughput, requiredInsertThroughput, requiredSelectThroughput, requiredSelectThroughput, requiredSelectThroughput, minCoresReq)
+	rows, err := DB.Query("select foo.* from (select id, ? , ?, num_cores, num_nodes from sizing where dimension='MaxThroughput' and num_cores>=?) as foo order by select_total_cores, insert_total_cores, num_cores", requiredInsertThroughput, requiredSelectThroughput, minCoresReq)
+	if err != nil {
+		fmt.Println("no records found")
+	}
+	defer rows.Close()
+	err = rows.Err()
+
+	allMaps := convertToMap(rows)
+	printMap(allMaps)
+	if err != nil {
+		fmt.Println("error occurred")
 	}
 }
