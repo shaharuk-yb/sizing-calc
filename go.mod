@@ -1,10 +1,10 @@
 module github.com/shaharuk-yb/sizing-calc
 
-go 1.22.0
+go 1.20
 
 require (
-	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/spf13/cobra v1.8.0
+	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/spf13/cobra v1.6.1
 )
 
 require (
